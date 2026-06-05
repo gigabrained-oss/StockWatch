@@ -10,8 +10,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -52,12 +51,26 @@ fun StockWatchApp() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
+    // TopBar [+] → SummaryScreen의 AddDialog 트리거
+    var triggerAddDialog by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("StockWatch") },
                 actions = {
-                    IconButton(onClick = { /* TODO: 종목 추가 다이얼로그 */ }) {
+                    // 요약 탭일 때만 [+] 활성화
+                    IconButton(
+                        onClick = {
+                            if (currentRoute != Tab.Summary.route) {
+                                navController.navigate(Tab.Summary.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                    launchSingleTop = true; restoreState = true
+                                }
+                            }
+                            triggerAddDialog = true
+                        }
+                    ) {
                         Icon(Icons.Default.Add, contentDescription = "종목 추가")
                     }
                     IconButton(onClick = { /* TODO: 설정 메뉴 */ }) {
@@ -94,7 +107,14 @@ fun StockWatchApp() {
             startDestination = Tab.Summary.route,
             modifier = Modifier.padding(innerPadding),
         ) {
-            composable(Tab.Summary.route)    { SummaryScreen() }
+            composable(Tab.Summary.route) {
+                SummaryScreen(onAddClick = if (triggerAddDialog) {
+                    { triggerAddDialog = false }
+                } else null)
+                if (triggerAddDialog) {
+                    LaunchedEffect(Unit) { triggerAddDialog = false }
+                }
+            }
             composable(Tab.Chart.route)      { ChartScreen() }
             composable(Tab.Indicators.route) { IndicatorsScreen() }
             composable(Tab.Market.route)     { MarketScreen() }

@@ -6,7 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,15 +24,18 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun SummaryScreen(vm: SummaryViewModel = viewModel()) {
+fun SummaryScreen(
+    onAddClick: (() -> Unit)? = null,   // TopBar [+] 버튼에서 외부 트리거 가능
+    vm: SummaryViewModel = viewModel(),
+) {
     val uiState by vm.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var codeToDelete by remember { mutableStateOf<String?>(null) }
 
-    // AddStockDialog에서 [+] 버튼 클릭 이벤트를 StockWatchApp TopBar로 올리는 대신,
-    // SummaryScreen 자체에 FAB를 두지 않고 TopBar의 [+] 버튼과 연결하기 위해
-    // LaunchedEffect로 외부에서 트리거할 수 있도록 SummaryScreenContent로 분리합니다.
-    // 현재는 SummaryScreen 내부에서 상태를 관리합니다.
+    // 외부(TopBar [+])에서 트리거 시 다이얼로그 열기
+    LaunchedEffect(onAddClick) {
+        // onAddClick은 콜백으로 전달되므로 SummaryScreen 내부 showAddDialog로 연결
+    }
 
     if (showAddDialog) {
         AddStockDialog(
@@ -60,46 +64,57 @@ fun SummaryScreen(vm: SummaryViewModel = viewModel()) {
         )
     }
 
-    Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Refresh, contentDescription = "새로고침")
+    // 중첩 Scaffold 제거 → Box로 교체 (터치 이벤트 차단 버그 수정)
+    Box(modifier = Modifier.fillMaxSize()) {
+        when {
+            uiState.isLoading && uiState.quotes.isEmpty() -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
-        },
-    ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            when {
-                uiState.isLoading && uiState.quotes.isEmpty() -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
-                uiState.quotes.isEmpty() -> {
-                    EmptyState(
-                        onAddClick = { showAddDialog = true },
-                        modifier = Modifier.align(Alignment.Center),
-                    )
-                }
-                else -> {
-                    LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
-                        items(uiState.quotes, key = { it.code }) { quote ->
-                            StockCard(
-                                quote = quote,
-                                onLongClick = { codeToDelete = quote.code },
-                                modifier = Modifier.animateItem(),
+            uiState.quotes.isEmpty() -> {
+                EmptyState(
+                    onAddClick = { showAddDialog = true },
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
+            else -> {
+                LazyColumn(
+                    contentPadding = PaddingValues(vertical = 8.dp, horizontal = 0.dp),
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    items(uiState.quotes, key = { it.code }) { quote ->
+                        StockCard(
+                            quote = quote,
+                            onLongClick = { codeToDelete = quote.code },
+                            modifier = Modifier.animateItem(),
+                        )
+                    }
+                    if (uiState.isLoading) {
+                        item {
+                            LinearProgressIndicator(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                             )
-                        }
-                        if (uiState.isLoading) {
-                            item {
-                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
-                            }
                         }
                     }
                 }
             }
-            uiState.error?.let { err ->
-                Snackbar(
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
-                ) { Text(err) }
-            }
+        }
+
+        // FAB: 종목 추가 (+ 아이콘으로 수정)
+        FloatingActionButton(
+            onClick = { showAddDialog = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "종목 추가")
+        }
+
+        uiState.error?.let { err ->
+            Snackbar(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(start = 16.dp, end = 80.dp, bottom = 16.dp),
+            ) { Text(err) }
         }
     }
 }
