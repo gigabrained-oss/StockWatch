@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "chart-comparison",
+      "runtimeExecutable": "C:\\Users\\terab\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "runtimeArgs": ["-m", "http.server", "3000", "--directory", "chart-comparison"],
+      "port": 3000
+    }
+  ]
+}
