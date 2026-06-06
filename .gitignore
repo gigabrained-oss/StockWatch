@@ -17,3 +17,5 @@ local.properties
 /MainActivity.kt
 /ui/
 /chart-comparison/
+/*.png
+/ui_dump.xml

@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.mystockwatch.domain.model.Market
 
@@ -30,7 +31,7 @@ fun AddStockDialog(
                     label = { Text("종목 코드") },
                     placeholder = { Text("예: 005930 / AAPL") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
@@ -39,6 +40,7 @@ fun AddStockDialog(
                     label = { Text("종목명") },
                     placeholder = { Text("예: 삼성전자") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text("시장 선택", style = MaterialTheme.typography.labelMedium)
