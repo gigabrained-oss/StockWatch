@@ -4,12 +4,14 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.mystockwatch.data.api.naverFinanceApi
+import com.example.mystockwatch.data.api.stockSearchApi
 import com.example.mystockwatch.data.api.yahooFinanceApi
 import com.example.mystockwatch.data.db.AppDatabase
 import com.example.mystockwatch.data.db.WatchlistEntity
 import com.example.mystockwatch.data.repository.StockRepository
 import com.example.mystockwatch.domain.model.Market
 import com.example.mystockwatch.domain.model.StockQuote
+import com.example.mystockwatch.domain.model.StockSearchResult
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -25,6 +27,7 @@ class SummaryViewModel(app: Application) : AndroidViewModel(app) {
         dao = AppDatabase.getInstance(app).watchlistDao(),
         naverApi = naverFinanceApi,
         yahooApi = yahooFinanceApi,
+        searchApi = stockSearchApi,
     )
 
     private val _uiState = MutableStateFlow(SummaryUiState())
@@ -55,6 +58,8 @@ class SummaryViewModel(app: Application) : AndroidViewModel(app) {
             repository.removeStock(code)
         }
     }
+
+    suspend fun searchStocks(query: String): List<StockSearchResult> = repository.searchStocks(query)
 
     private suspend fun refreshQuotes(watchlist: List<WatchlistEntity>) {
         if (watchlist.isEmpty()) {

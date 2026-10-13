@@ -1,18 +1,21 @@
 package com.example.mystockwatch.data.repository
 
 import com.example.mystockwatch.data.api.NaverFinanceApi
+import com.example.mystockwatch.data.api.StockSearchApi
 import com.example.mystockwatch.data.api.YahooFinanceApi
 import com.example.mystockwatch.data.db.WatchlistDao
 import com.example.mystockwatch.data.db.WatchlistEntity
 import com.example.mystockwatch.domain.model.DataSource
 import com.example.mystockwatch.domain.model.Market
 import com.example.mystockwatch.domain.model.StockQuote
+import com.example.mystockwatch.domain.model.StockSearchResult
 import kotlinx.coroutines.flow.Flow
 
 class StockRepository(
     private val dao: WatchlistDao,
     private val naverApi: NaverFinanceApi,
     private val yahooApi: YahooFinanceApi,
+    private val searchApi: StockSearchApi,
 ) {
     fun observeWatchlist(): Flow<List<WatchlistEntity>> = dao.observeAll()
 
@@ -21,6 +24,21 @@ class StockRepository(
     }
 
     suspend fun removeStock(code: String) = dao.delete(code)
+
+    /** Search by name or code (Korean or English) across domestic and US listings. */
+    suspend fun searchStocks(query: String): List<StockSearchResult> {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty()) return emptyList()
+        val items = searchApi.search(trimmed).items
+        return items.mapNotNull { item ->
+            val market = when (item.nationCode) {
+                "KOR" -> Market.KOREA
+                "USA" -> Market.USA
+                else -> return@mapNotNull null
+            }
+            StockSearchResult(code = item.code, name = item.name, market = market, exchangeLabel = item.typeName)
+        }
+    }
 
     suspend fun fetchQuote(entity: WatchlistEntity): StockQuote {
         val market = Market.valueOf(entity.market)

@@ -40,6 +40,7 @@ fun SummaryScreen(
     if (showAddDialog) {
         AddStockDialog(
             onDismiss = { showAddDialog = false },
+            onSearch = { query -> vm.searchStocks(query) },
             onConfirm = { code, name, market ->
                 vm.addStock(code, name, market)
                 showAddDialog = false
