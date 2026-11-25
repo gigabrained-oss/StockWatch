@@ -51,18 +51,19 @@ class StockRepository(
     private suspend fun fetchKorean(entity: WatchlistEntity): StockQuote {
         return try {
             val response = naverApi.getQuote("SERVICE_ITEM:${entity.code}")
-            val data = response.result?.areas?.firstOrNull()?.datas?.firstOrNull()
+            val result = response.result ?: error("Naver: empty result")
+            val data = result.areas.firstOrNull()?.datas?.firstOrNull()
                 ?: error("Naver: empty result")
             StockQuote(
                 code = entity.code,
                 name = data.name,
                 market = Market.KOREA,
                 price = data.price,
-                changeValue = if (data.riseFlag == "2") -data.changeValue else data.changeValue,
-                changeRate = if (data.riseFlag == "2") -data.changeRate else data.changeRate,
+                changeValue = data.changeValue,
+                changeRate = data.changeRate,
                 volume = data.volume,
                 source = DataSource.NAVER,
-                timestampMs = data.timestamp * 1000,
+                timestampMs = result.timeMs ?: System.currentTimeMillis(),
                 isMarketOpen = true,
             )
         } catch (e: Exception) {

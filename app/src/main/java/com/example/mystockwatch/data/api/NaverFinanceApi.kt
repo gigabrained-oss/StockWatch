@@ -18,6 +18,7 @@ data class NaverResponse(
 
 data class NaverResult(
     @SerializedName("areas") val areas: List<NaverArea>,
+    @SerializedName("time") val timeMs: Long?,     // server time, epoch ms
 )
 
 data class NaverArea(
@@ -27,10 +28,15 @@ data class NaverArea(
 data class NaverData(
     @SerializedName("cd") val code: String,
     @SerializedName("nm") val name: String,
-    @SerializedName("sv") val price: Double,
-    @SerializedName("cv") val changeValue: Double,
-    @SerializedName("cr") val changeRate: Double,
-    @SerializedName("rf") val riseFlag: String,    // "1"=상승 "2"=하락 "3"=보합
+    @SerializedName("nv") val nowPrice: Double?,   // current price (absent/0 before the open)
+    @SerializedName("sv") val prevClose: Double,   // previous day's close (base price)
+    @SerializedName("rf") val riseFlag: String?,   // "1"=상한 "2"=상승 "3"=보합 "4"=하한 "5"=하락
     @SerializedName("aq") val volume: Long,
-    @SerializedName("timestamp") val timestamp: Long,
-)
+) {
+    // Derive change from nv - sv (as stockMonitor does) instead of trusting the
+    // unsigned cv/cr fields plus rf, whose codes are easy to misread.
+    val price: Double get() = nowPrice?.takeIf { it > 0 } ?: prevClose
+    val changeValue: Double get() = price - prevClose
+    val changeRate: Double get() =
+        if (prevClose > 0) Math.round(changeValue / prevClose * 10000) / 100.0 else 0.0
+}
